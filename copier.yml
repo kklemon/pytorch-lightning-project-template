@@ -1,0 +1,15 @@
+_subdirectory: template
+
+project_name:
+  type: str
+  default: pytorch-lightning-project
+
+package_name:
+  type: str
+  default: "{{ project_name|lower|replace('-', '_') }}"
+
+author_email:
+  type: str
+
+use_dummies:
+  type: bool

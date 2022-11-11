@@ -1,0 +1,24 @@
+{% if use_dummies %}
+import numpy as np
+{% endif %}
+from torch.utils.data import Dataset
+
+
+class CustomDataset(Dataset):
+    def __init__(self, split: str):
+        pass
+
+    def __len__(self):
+        {% if use_dummies %}
+        return 1024
+        {% else %}
+        raise NotImplementedError
+        {% endif %}
+    
+    def __getitem__(self, idx):
+        {% if use_dummies %}
+        label = np.random.randint(2)
+        return np.random.normal(loc=(label * 2) - 1), label
+        {% else %}
+        raise NotImplementedError
+        {% endif %}

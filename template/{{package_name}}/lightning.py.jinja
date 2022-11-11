@@ -1,0 +1,72 @@
+import pytorch_lightning as pl
+from {{ package_name }} import utils
+from {{ package_name }}.modules import Model
+from {{ package_name }}.datasets import CustomDataset
+
+
+class LitDataModule(pl.LightningDataModule):
+    def __init__(self, batch_size: int = 32, num_workers: int = 0):
+        super().__init__()
+
+        self.save_hyperparameters()
+        
+        self.train_ds = None
+        self.val_ds = None
+        self.test_ds = None
+
+    def setup(self, stage: Optional[str] = None):
+        self.train_ds = CustomDataset(split='train')
+        self.val_ds = CustomDataset(split='val')
+        self.test_ds = CustomDataset(split='test')
+
+    def _create_dataloader(self, dataset, shuffle=True):
+        num_workers = 0 if utils.is_debug else self.hparams.num_workers
+
+        return DataLoader(
+            dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=shuffle,
+            num_workers=num_workers
+        )
+
+    def train_dataloader(self):
+        return self._create_dataloader(self.train_ds, shuffle=True)
+
+    def val_dataloader(self):
+        return self._create_dataloader(self.val_ds, shuffle=False)
+
+    def test_dataloader(self):
+        return self._create_dataloader(self.test_ds, shuffle=False)
+
+
+class LitModel(pl.LightningModule):
+    def __init__(self):
+        super().__init__()
+
+        self.model = Model()
+
+    def forward(self, *args, **kwarg_inputs):
+        return self.model(*args, **kwarg_inputs)
+
+    def compute_loss(self, y, y_pred):
+        raise NotImplementedError
+
+    def step(self, batch, batch_idx, log_prefix):
+        x, y = batch
+
+        y_pred = self(x)
+        loss = self.compute_loss(y, y_pred)
+
+        self.log(f'{log_prefix}/loss', loss, prog_bar=True)
+
+        return loss
+
+    def training_step(self, batch, batch_idx):
+        return self.step(batch, batch_idx, 'train')
+
+    def validation_step(self, batch, batch_idx):
+        return self.step(batch, batch_idx, 'val')
+
+    def predict_step(self, batch, batch_idx):
+        x, _ = batch
+        return self(x)

@@ -1,0 +1,13 @@
+from pytorch_lightning.cli import LightningCLI
+from {{ package_name }}.lightning import DataModule
+
+
+def main():
+    LightningCLI(
+        LightningCLI,
+        DataModule,
+    )
+
+
+if __name__ == '__main__':
+    main()

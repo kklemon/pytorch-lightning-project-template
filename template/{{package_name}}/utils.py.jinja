@@ -1,0 +1,59 @@
+import json
+import torch
+import sys
+import random
+import pandas as pd
+import numpy as np
+
+from typing import Iterable
+from itertools import chain
+from pathlib import Path
+
+
+def to_device(o, device=None):
+    if isinstance(o, torch.Tensor):
+        return o.to(device)
+    if isinstance(o, (list, tuple)):
+        return type(o)(to_device(el, device) for el in o)
+    if isinstance(o, Mapping):
+        return {k: to_device(v, device) for k, v in o.items()}
+    return o
+
+
+def numel(module):
+    """
+    Get number of trainable parameters of a `torch.nn.Module`.
+    """
+    return sum(p.numel() for p in module.parameters() if p.requires_grad)
+
+
+def is_debug():
+    return 'pydevd' in sys.modules
+
+
+def seed_all(seed=42):
+    """
+    Seed function to guarantee the reproducibility of the code.
+
+    See https://discuss.pytorch.org/t/reproducibility-with-all-the-bells-and-whistles/81097
+    """
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    np.random.seed(seed)
+    random.seed(seed)
+
+
+def identity(x, *args, **kwargs):
+    return x
+
+
+def default(value, default_value):
+    return default_value if value is None else value
+
+
+def is_none(value):
+    return value is None or value == 'none'
